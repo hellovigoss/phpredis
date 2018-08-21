@@ -606,8 +606,19 @@ static void fyshuffle(int *array, size_t len) {
 clusterReply* cluster_get_slots(RedisSock *redis_sock TSRMLS_DC)
 {
     clusterReply *r;
-    REDIS_REPLY_TYPE type;
-    long len;
+    REDIS_REPLY_TYPE type, auth_type;
+    long len, auth_length;
+
+    /*
+     * add by yedai
+     * 增加针对各个slot的认证
+     */
+    if (redis_sock_write(redis_sock, RESP_AUTH_CMD,
+                         sizeof(RESP_AUTH_CMD)-1 TSRMLS_CC) < 0 ||
+        redis_read_reply_type(redis_sock, &auth_type, &auth_length TSRMLS_CC) < 0)
+    {
+        return NULL;
+    }
 
     // Send the command to the socket and consume reply type
     if (redis_sock_write(redis_sock, RESP_CLUSTER_SLOTS_CMD,
@@ -1373,6 +1384,8 @@ PHP_REDIS_API short cluster_send_command(redisCluster *c, short slot, const char
 {
     int resp, timedout = 0;
     long msstart;
+    REDIS_REPLY_TYPE type;
+    long length;
 
     /* Set the slot we're operating against as well as it's socket.  These can
      * change during our request loop if we have a master failure and are
@@ -1401,6 +1414,18 @@ PHP_REDIS_API short cluster_send_command(redisCluster *c, short slot, const char
 
         /* Attempt to deliver our command to the node, and that failing, to any
          * node until we find one that is available. */
+
+        /**
+         * add by yedai
+         * 增加默认的账号密码认证
+         */
+        cluster_sock_write(c, RESP_AUTH_CMD, sizeof(RESP_AUTH_CMD)-1, 0 TSRMLS_CC);
+        /*
+         * add by yedai
+         * 此处需要调用一次消费掉对应stream中上次auth的结果
+         */
+        cluster_check_response(c, &c->reply_type TSRMLS_CC);
+
         if (cluster_sock_write(c, cmd, cmd_len, 0 TSRMLS_CC) == -1) {
             /* We have to abort, as no nodes are reachable */
             zend_throw_exception(redis_cluster_exception_ce,

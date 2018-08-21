@@ -20,6 +20,7 @@
 #define RESP_ASKING_CMD        "*1\r\n$6\r\nASKING\r\n"
 #define RESP_READONLY_CMD      "*1\r\n$8\r\nREADONLY\r\n"
 #define RESP_READWRITE_CMD     "*1\r\n$9\r\nREADWRITE\r\n"
+#define RESP_AUTH_CMD          "*2\r\n$4\r\nAUTH\r\n$6\r\n123456\r\n"
 
 #define RESP_READONLY_CMD_LEN (sizeof(RESP_READONLY_CMD)-1)
 

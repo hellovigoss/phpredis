@@ -2081,8 +2081,10 @@ redis_read_reply_type(RedisSock *redis_sock, REDIS_REPLY_TYPE *reply_type,
 
     // If this is a BULK, MULTI BULK, or simply an INTEGER response, we can
     // extract the value or size info here
+    // add by yedai
+
     if(*reply_type == TYPE_INT || *reply_type == TYPE_BULK ||
-       *reply_type == TYPE_MULTIBULK)
+       *reply_type == TYPE_MULTIBULK || *reply_type == TYPE_LINE)
     {
         // Buffer to hold size information
         char inbuf[255];
